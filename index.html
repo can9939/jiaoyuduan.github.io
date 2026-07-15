@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飞友航空教育-教师管理端</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:"微软雅黑",sans-serif;}
+        body{background:#f0f7ff;}
+        .hide{display:none !important;}
+        .container{width:100%;min-height:100vh;}
+        .login-box{width:460px;margin:80px auto;background:#fff;padding:35px;border-radius:12px;box-shadow:0 4px 15px #c5d8f0;}
+        .login-box h2{text-align:center;color:#0f4c81;margin-bottom:25px;}
+        .input-item{margin:15px 0;}
+        .input-item label{display:block;margin-bottom:6px;color:#333;}
+        .input-item input,.input-item select{width:100%;height:44px;padding:0 12px;border:1px solid #ccc;border-radius:6px;font-size:15px;}
+        .btn{width:100%;height:45px;background:#1967d2;color:#fff;border:none;border-radius:6px;font-size:16px;cursor:pointer;margin-top:10px;}
+        .btn:hover{background:#1557b0;}
+        .tip-text{color:#666;font-size:13px;margin:5px 0;}
+        .pop-mask{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:999;}
+        .pop-win{background:#fff;padding:30px;border-radius:10px;text-align:center;min-width:350px;}
+        .pop-win h3{margin-bottom:20px;}
+        .pop-btn{padding:8px 25px;background:#1967d2;color:#fff;border:none;border-radius:5px;cursor:pointer;margin:5px;}
+        .del-btn{background:#e53935;}
+        .edit-btn{background:#43a047;}
+        .main-header{background:#1967d2;color:#fff;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;}
+        .nav-bar{display:flex;background:#e8f0fe;}
+        .nav-item{padding:12px 20px;cursor:pointer;border-right:1px solid #d0dcec;}
+        .nav-item.active{background:#1967d2;color:#fff;}
+        .main-content{padding:20px;}
+        .content-box{background:#fff;padding:20px;border-radius:8px;margin-bottom:20px;}
+        .error-page{text-align:center;padding:100px;}
+        .plane-card{padding:10px;border:1px solid #eee;border-radius:6px;margin:8px 0;}
+        .plane-card h4{color:#0f4c81;}
+        .table-head{display:flex;padding:10px;background:#e8f0fe;border-radius:6px;margin-bottom:10px;}
+        .col-name{width:35%;text-align:center;font-weight:bold;}
+        .col-email{width:35%;text-align:center;font-weight:bold;}
+        .col-opt{width:30%;text-align:center;font-weight:bold;}
+        .stu-row{display:flex;padding:10px;border-bottom:1px solid #eee;align-items:center;}
+        .stu-name{width:35%;text-align:center;}
+        .stu-email{width:35%;text-align:center;}
+        .stu-opt{width:30%;text-align:center;}
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <!-- 教师登录页 -->
+    <div class="login-page" id="teaLoginPage">
+        <div class="login-box">
+            <h2>飞友航空教育 教师端登录</h2>
+            <div class="input-item">
+                <label>所属教学校区</label>
+                <select id="teaLoginSchool">
+                    <option value="柳州市飞友小学总部">柳州市飞友小学总部</option>
+                    <option value="广东白云机场分部">广东白云机场分部</option>
+                </select>
+            </div>
+            <div class="input-item">
+                <label>教师QQ邮箱</label>
+                <input type="email" id="teaLoginEmail" placeholder="仅填写QQ邮箱">
+            </div>
+            <div class="input-item">
+                <label>管理验证码</label>
+                <input type="text" id="teaLoginCode" placeholder="输入统一验证码">
+            </div>
+            <div class="input-item">
+                <label>教师通行编码(FY开头)</label>
+                <input type="text" id="teaLoginPassCode" placeholder="FY+数字格式">
+                <p class="tip-text">全校教师统一准入规则</p>
+            </div>
+            <button class="btn" onclick="teacherLogin()">教师端登录</button>
+        </div>
+    </div>
+
+    <!-- 验证码错误页 -->
+    <div class="error-page hide" id="teaErrorPage">
+        <h2>管理验证码错误</h2>
+        <p style="margin:20px 0;">权限验证失败，无法进入教师管理后台</p>
+        <button class="btn" style="width:200px;margin:0 auto;" onclick="backTeaLogin()">返回教师登录</button>
+    </div>
+
+    <!-- 教师管理主页 -->
+    <div class="tea-main hide" id="teaMain">
+        <div class="main-header">
+            <h3>飞友航空教育 教师管理后台</h3>
+            <div>
+                <span id="teaNowSchool">当前执教校区：</span>
+                <button style="margin-left:15px;padding:5px 10px;border:none;border-radius:4px;background:#fff;color:#1967d2;cursor:pointer;" onclick="teaSwitchSchoolBox()">切换校区</button>
+                <button style="margin-left:10px;padding:5px 10px;border:none;border-radius:4px;background:#fff;color:red;cursor:pointer;" onclick="teaLogout()">退出教师后台</button>
+            </div>
+        </div>
+        <div class="nav-bar">
+            <div class="nav-item active" onclick="teaChangeNav(0)">学生打卡统计</div>
+            <div class="nav-item" onclick="teaChangeNav(1)">全体学生管理</div>
+            <div class="nav-item" onclick="teaChangeNav(2)">航空知识趣闻</div>
+        </div>
+        <div class="main-content">
+            <!-- 学生打卡统计 -->
+            <div class="tea-page" id="teaPage0">
+                <div class="content-box">
+                    <h3>全校学生每日打卡出勤统计</h3>
+                    <p style="margin:15px 0;">实时查看本班/本校区学生学习打卡完成情况</p>
+                    <button class="btn" style="width:220px;">刷新今日打卡数据</button>
+                </div>
+            </div>
+            <!-- 全体学生管理 -->
+            <div class="tea-page hide" id="teaPage1">
+                <div class="content-box">
+                    <h3>校区学生信息管理</h3>
+                    <p style="margin:15px 0;">录入、查看在校学生账号信息</p>
+                    <button class="pop-btn" onclick="openAddStuBox()">添加学生</button>
+                    <div class="table-head">
+                        <div class="col-name">学生姓名</div>
+                        <div class="col-email">QQ邮箱</div>
+                        <div class="col-opt">操作</div>
+                    </div>
+                    <div id="studentListBox"></div>
+                </div>
+            </div>
+            <!-- 航空知识趣闻 -->
+            <div class="tea-page hide" id="teaPage2">
+                <div class="content-box">
+                    <h3>航空知识趣闻大全</h3>
+                    <p style="line-height:1.8;margin-top:10px;">
+                    1.民航客机优先选择平流层飞行，气流平稳舒适度极高<br>
+                    2.飞机逆风起飞距离更短，安全性更高<br>
+                    3.空中交通管制统一调配所有航线，避免飞行相撞<br>
+                    4.绝大多数客机无法在空中长时间倒飞飞行<br>
+                    5.飞机黑匣子可完整记录飞行数据与驾驶舱语音<br>
+                    6.飞机窗户设计成圆角，避免高空压力产生裂痕<br>
+                    7.航班延误时地面滑行油耗远高于空中巡航油耗
+                    </p>
+                    <div style="margin-top:20px;">
+                        <h4>各类飞机科普</h4>
+                        <div class="plane-card">
+                            <h4>国产客机</h4>
+                            <p>C919国产大型干线客机、ARJ21国产支线客机、新舟60客运飞机</p>
+                        </div>
+                        <div class="plane-card">
+                            <h4>欧洲空客系列</h4>
+                            <p>A320neo、A330、A350远程宽体、A380双层巨型客机</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加学生弹窗 -->
+    <div class="pop-mask hide" id="addStudentPop">
+        <div class="pop-win">
+            <h3>新增学生信息</h3>
+            <div class="input-item">
+                <label>学生姓名</label>
+                <input type="text" id="stuNameInput" placeholder="请输入学生姓名">
+            </div>
+            <div class="input-item">
+                <label>学生QQ邮箱</label>
+                <input type="email" id="stuEmailInput" placeholder="请输入QQ邮箱">
+            </div>
+            <button class="pop-btn" onclick="addNewStudent()">确认添加学生</button>
+            <button class="pop-btn" onclick="closeAddStuBox()">取消</button>
+        </div>
+    </div>
+
+    <!-- 修改学生弹窗 -->
+    <div class="pop-mask hide" id="editStudentPop">
+        <div class="pop-win">
+            <h3>修改学生信息</h3>
+            <input type="hidden" id="editIndex">
+            <div class="input-item">
+                <label>学生姓名</label>
+                <input type="text" id="editStuName" placeholder="请输入学生姓名">
+            </div>
+            <div class="input-item">
+                <label>学生QQ邮箱</label>
+                <input type="email" id="editStuEmail" placeholder="请输入QQ邮箱">
+            </div>
+            <button class="pop-btn" onclick="saveEditStudent()">保存修改</button>
+            <button class="pop-btn" onclick="closeEditStuBox()">取消</button>
+        </div>
+    </div>
+
+    <!-- 登录成功弹窗 -->
+    <div class="pop-mask hide" id="teaLoginSuccessPop">
+        <div class="pop-win">
+            <h3>教师权限验证通过，成功进入管理端</h3>
+            <button class="pop-btn" onclick="closeTeaPop()">确定进入</button>
+        </div>
+    </div>
+    <!-- 切换校区弹窗 -->
+    <div class="pop-mask hide" id="teaChangeSchoolPop">
+        <div class="pop-win">
+            <h3>切换执教校区</h3>
+            <select id="teaChangeSchoolSel" style="padding:8px;margin:15px 0;">
+                <option value="柳州市飞友小学总部">柳州市飞友小学总部</option>
+                <option value="广东白云机场分部">广东白云机场分部</option>
+            </select>
+            <br>
+            <button class="pop-btn" onclick="teaConfirmSchool()">确认切换</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const TEA_RIGHT_CODE = "9113";
+let teaNowSchool = "";
+// 清空默认学生，初始为空
+let studentData = [];
+
+// 渲染学生列表
+function renderStudentList(){
+    let box = document.getElementById("studentListBox");
+    let html = "";
+    studentData.forEach((item,index)=>{
+        html += `
+        <div class="stu-row">
+            <div class="stu-name">${item.name}</div>
+            <div class="stu-email">${item.email}</div>
+            <div class="stu-opt">
+                <button class="pop-btn edit-btn" style="padding:4px 10px;font-size:14px" onclick="openEditStuBox(${index})">修改</button>
+                <button class="pop-btn del-btn" style="padding:4px 10px;font-size:14px" onclick="delStudent(${index})">删除</button>
+            </div>
+        </div>
+        `
+    })
+    box.innerHTML = html;
+}
+
+// 打开添加弹窗
+function openAddStuBox(){
+    document.getElementById("addStudentPop").classList.remove("hide");
+    document.getElementById("stuNameInput").value = "";
+    document.getElementById("stuEmailInput").value = "";
+}
+function closeAddStuBox(){
+    document.getElementById("addStudentPop").classList.add("hide");
+}
+// 添加学生
+function addNewStudent(){
+    let name = document.getElementById("stuNameInput").value.trim();
+    let email = document.getElementById("stuEmailInput").value.trim();
+    if(!name){
+        alert("请输入学生姓名！");
+        return;
+    }
+    if(!email || !email.endsWith("@qq.com")){
+        alert("请输入正确的QQ邮箱！");
+        return;
+    }
+    studentData.push({name:name,email:email});
+    renderStudentList();
+    closeAddStuBox();
+    alert("学生添加成功！");
+}
+
+// 打开修改弹窗
+function openEditStuBox(idx){
+    document.getElementById("editIndex").value = idx;
+    document.getElementById("editStuName").value = studentData[idx].name;
+    document.getElementById("editStuEmail").value = studentData[idx].email;
+    document.getElementById("editStudentPop").classList.remove("hide");
+}
+function closeEditStuBox(){
+    document.getElementById("editStudentPop").classList.add("hide");
+}
+// 保存修改
+function saveEditStudent(){
+    let idx = Number(document.getElementById("editIndex").value);
+    let name = document.getElementById("editStuName").value.trim();
+    let email = document.getElementById("editStuEmail").value.trim();
+    if(!name){
+        alert("请输入学生姓名！");
+        return;
+    }
+    if(!email || !email.endsWith("@qq.com")){
+        alert("请输入正确的QQ邮箱！");
+        return;
+    }
+    studentData[idx].name = name;
+    studentData[idx].email = email;
+    renderStudentList();
+    closeEditStuBox();
+    alert("修改成功！");
+}
+
+// 删除学生
+function delStudent(idx){
+    if(confirm("确定删除该学生信息吗？")){
+        studentData.splice(idx,1);
+        renderStudentList();
+    }
+}
+
+function backTeaLogin(){
+    document.getElementById("teaErrorPage").classList.add("hide");
+    document.getElementById("teaLoginPage").classList.remove("hide");
+}
+
+function teacherLogin(){
+    let email = document.getElementById("teaLoginEmail").value.trim();
+    let code = document.getElementById("teaLoginCode").value.trim();
+    let passCode = document.getElementById("teaLoginPassCode").value.trim();
+    let school = document.getElementById("teaLoginSchool").value;
+    if(!email.endsWith("@qq.com")){
+        alert("教师账号仅支持QQ邮箱登录！");
+        return;
+    }
+    if(!passCode.startsWith("FY")){
+        alert("教师通行编码必须以FY开头！");
+        return;
+    }
+    if(code !== TEA_RIGHT_CODE){
+        document.getElementById("teaLoginPage").classList.add("hide");
+        document.getElementById("teaErrorPage").classList.remove("hide");
+        return;
+    }
+    teaNowSchool = school;
+    document.getElementById("teaNowSchool").innerText = "当前执教校区："+teaNowSchool;
+    document.getElementById("teaLoginPage").classList.add("hide");
+    document.getElementById("teaMain").classList.remove("hide");
+    document.getElementById("teaLoginSuccessPop").classList.remove("hide");
+}
+
+function closeTeaPop(){
+    document.getElementById("teaLoginSuccessPop").classList.add("hide");
+}
+
+function teaChangeNav(index){
+    document.querySelectorAll(".nav-item").forEach((item,i)=>{
+        item.classList.toggle("active",i===index);
+    });
+    document.querySelectorAll(".tea-page").forEach((item,i)=>{
+        item.classList.toggle("hide",i!==index);
+    });
+}
+
+function teaSwitchSchoolBox(){
+    document.getElementById("teaChangeSchoolPop").classList.remove("hide");
+}
+function teaConfirmSchool(){
+    teaNowSchool = document.getElementById("teaChangeSchoolSel").value;
+    document.getElementById("teaNowSchool").innerText = "当前执教校区："+teaNowSchool;
+    document.getElementById("teaChangeSchoolPop").classList.add("hide");
+    alert("执教校区切换成功");
+}
+
+function teaLogout(){
+    if(confirm("确定退出教师管理后台吗？")){
+        document.getElementById("teaMain").classList.add("hide");
+        document.getElementById("teaLoginPage").classList.remove("hide");
+        alert("已退出教师权限后台");
+    }
+}
+</script>
+</body>
+</html>
